@@ -3,5 +3,8 @@ git-test/
 
 .env
 
-build/.ssh
+build
+!build/Caddyfile
+!build/supervisord.conf
+
 out
