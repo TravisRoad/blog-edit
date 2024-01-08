@@ -1,0 +1,15 @@
+linters:
+  # Disable all linters, the defaults don't pass on our code yet
+  disable-all: true
+
+  # Enable these for now
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - unused
+    - staticcheck
+    - exportloopref
+    - errorlint
+    - goimports
