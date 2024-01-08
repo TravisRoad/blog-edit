@@ -1,0 +1,10 @@
+{
+	auto_https off
+}
+
+:{$PORT:8000} {
+	handle_path /api* {
+		reverse_proxy localhost:8080
+	}
+	reverse_proxy localhost:3000
+}
