@@ -22,12 +22,16 @@ func main() {
 	r := mux.NewRouter()
 
 	r.Use(middleware.Recover, middleware.Logging)
+	// r.Use(middleware.Auth)
 
 	r.HandleFunc("/v1/file", handler.GetFileList).Methods("GET")
 	r.HandleFunc("/v1/file/{filename}", handler.GetFile).Methods("GET")
-	r.HandleFunc("/v1/file/{filename}", handler.UpdateFile).Methods("POST")
-	r.HandleFunc("/v1/apply", handler.Apply).Methods("POST")
+	r.HandleFunc("/v1/file/{filename}", handler.UpdateFile).Methods("PUT")
+	r.HandleFunc("/v1/file/{filename}", handler.Apply).Methods("POST")
 	r.HandleFunc("/v1/sync", handler.Sync).Methods("POST")
+	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}).Methods("GET")
 
 	srv := http.Server{
 		Addr:         global.Config.Addr,
