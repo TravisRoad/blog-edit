@@ -3,8 +3,8 @@ git-test/
 
 .env
 
-build
-!build/Caddyfile
-!build/supervisord.conf
+/build
+!/build/Caddyfile
+!/build/supervisord.conf
 
 out
