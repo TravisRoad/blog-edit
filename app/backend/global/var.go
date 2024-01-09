@@ -27,7 +27,9 @@ func GitClient() *git.Client {
 				WithEnv(map[string]string{
 					"GIT_AUTHOR_NAME":  Config.GitAuthorName,
 					"GIT_AUTHOR_EMAIL": Config.GitAuthorEmail,
-				})
+				}).
+				WithAuthor(Config.GitAuthorName).
+				WithEmail(Config.GitAuthorEmail)
 		})
 	}
 	return defaltClient

@@ -1,12 +1,15 @@
 package git
 
 import (
+	"fmt"
 	"os/exec"
 )
 
 type Client struct {
-	Dir string
-	Env []string
+	Dir    string
+	Env    []string
+	Author string
+	Email  string
 }
 
 func NewClient() *Client {
@@ -18,6 +21,16 @@ func (c *Client) WithDir(dir string) *Client {
 	return c
 }
 
+func (c *Client) WithAuthor(author string) *Client {
+	c.Author = author
+	return c
+}
+
+func (c *Client) WithEmail(email string) *Client {
+	c.Email = email
+	return c
+}
+
 func (c *Client) WithEnv(env map[string]string) *Client {
 	for k, v := range env {
 		c.Env = append(c.Env, k+"="+v)
@@ -25,23 +38,30 @@ func (c *Client) WithEnv(env map[string]string) *Client {
 	return c
 }
 
-func (c *Client) Commit(msg string) error {
-	cmd := exec.Command("git", "commit", "-m", msg)
+func (c *Client) Commit(msg string) (string, error) {
+	cmd := exec.Command("git", "commit", "-m", msg, "--author", fmt.Sprintf("%s <%s>", c.Author, c.Email))
 	cmd.Dir = c.Dir
-	cmd.Env = c.Env
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }
 
-func (c *Client) Add(filename string) error {
+func (c *Client) Add(filename string) (string, error) {
 	cmd := exec.Command("git", "add", filename)
 	cmd.Dir = c.Dir
-	cmd.Env = c.Env
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }
 
-func (c *Client) Push() error {
+func (c *Client) Push() (string, error) {
 	cmd := exec.Command("git", "push")
 	cmd.Dir = c.Dir
-	cmd.Env = c.Env
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+func (c *Client) Pull() (string, error) {
+	cmd := exec.Command("git", "pull", "--rebase")
+	cmd.Dir = c.Dir
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }

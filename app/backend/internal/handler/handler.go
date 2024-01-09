@@ -3,7 +3,9 @@ package handler
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,8 +25,9 @@ func decodeFilename(r *http.Request) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(global.Config.DataPath, string(filename))
-	return path, nil
+	path := string(filename)
+	// path := filepath.Join(global.Config.DataPath, string(filename))
+	return filepath.Abs(path)
 }
 
 func GetFileList(w http.ResponseWriter, r *http.Request) {
@@ -36,12 +39,12 @@ func GetFileList(w http.ResponseWriter, r *http.Request) {
 		if d.IsDir() {
 			return nil
 		}
-		ans = append(ans, d.Name())
+		ans = append(ans, path)
 		return nil
 	})
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fail(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -51,14 +54,14 @@ func GetFileList(w http.ResponseWriter, r *http.Request) {
 		"data": ans,
 	})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fail(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	_, err = w.Write(body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fail(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -66,13 +69,11 @@ func GetFileList(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetFile(w http.ResponseWriter, r *http.Request) {
-	enc := mux.Vars(r)["filename"]
-	filename, err := base64.StdEncoding.DecodeString(enc)
+	path, err := decodeFilename(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fail(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	path := filepath.Join(global.Config.DataPath, string(filename))
 	content, err := os.ReadFile(path)
 	if err != nil {
 		fail(w, err.Error(), http.StatusInternalServerError)
@@ -110,15 +111,37 @@ func UpdateFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func Apply(w http.ResponseWriter, r *http.Request) {
-	// path, err := decodeFilename(r)
-	// if err != nil {
-	// 	fail(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	path, err := decodeFilename(r)
+	if err != nil {
+		fail(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// cli := global.GitClient()
+	cli := global.GitClient()
+
+	if out, err := cli.Add(path); err != nil {
+		slog.Error(out, err)
+		fail(w, out, http.StatusInternalServerError)
+		return
+	}
+	if out, err := cli.Commit("apply change"); err != nil {
+		slog.Error(out, err)
+		fail(w, out, http.StatusInternalServerError)
+		return
+	}
 }
 
 func Sync(w http.ResponseWriter, r *http.Request) {
-
+	cli := global.GitClient()
+	if out, err := cli.Pull(); err != nil {
+		slog.Error(out, err)
+		fail(w, out, http.StatusInternalServerError)
+		return
+	}
+	if out, err := cli.Push(); err != nil {
+		slog.Error(out, err)
+		fail(w, fmt.Sprintf("failed to push: %s", out), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
