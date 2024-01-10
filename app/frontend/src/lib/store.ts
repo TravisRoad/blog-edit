@@ -53,19 +53,23 @@ const useTheme = create(
 
 const initEditer = {
   file: "",
+  content: "",
 };
 
-const useEditer = create(
+const useEditor = create(
   devtools(
     persist(
       combine(initEditer, (set, get) => ({
         Set: (p: any) => {
           set(p);
         },
+        GetContent: (): string => {
+          return get().content;
+        },
       })),
-      { name: "editer" }
+      { name: "editor" }
     )
   )
 );
 
-export { usePreference, useTheme, useEditer };
+export { usePreference, useTheme, useEditor };

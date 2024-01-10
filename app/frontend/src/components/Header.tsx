@@ -17,11 +17,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
 import { toast } from "./ui/use-toast";
 import { ToastAction } from "./ui/toast";
-import { useEditer, usePreference } from "@/lib/store";
+import { useEditor, usePreference } from "@/lib/store";
 import Preference from "@/components/Preference";
 import { ScrollArea } from "./ui/scroll-area";
+import { useStore } from "zustand";
+import { Skeleton } from "./ui/skeleton";
 
 const getFileList = async (token: string): Promise<string[]> => {
   const list: string[] | undefined = await fetch("/api/v1/file", {
@@ -53,19 +56,25 @@ const getFileList = async (token: string): Promise<string[]> => {
   return [];
 };
 
-export function ComboboxDemo() {
+export function FileSelector() {
+  const [loading, setLoading] = React.useState<boolean>(true);
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
+  const value = useStore(useEditor, (s) => s.file);
   const [files, setFiles] = React.useState<string[]>([]);
   const token = usePreference((s) => s.token);
-  const setFile = useEditer((s) => s.Set);
+  const setFile = useEditor((s) => s.Set);
 
   useEffect(() => {
     if (token) {
-      getFileList(token).then(setFiles);
+      getFileList(token)
+        .then(setFiles)
+        .then(() => setLoading(false));
     }
   }, [token]);
 
+  if (loading) {
+    return <Skeleton className="w-full h-10" />;
+  }
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -90,9 +99,8 @@ export function ComboboxDemo() {
                   key={file}
                   value={file}
                   onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue);
                     setOpen(false);
-                    setFile({ file: currentValue });
+                    setFile({ file: currentValue, content: "" });
                   }}
                 >
                   <Check
@@ -114,9 +122,9 @@ export function ComboboxDemo() {
 
 export default function Header() {
   return (
-    <div className="w-full flex flex-row items-center gap-x-4 p-2 sticky top-0">
+    <div className="w-full flex flex-row items-center gap-x-4 p-2 sticky top-0 z-50 bg-white border-b mb-2">
       <div className="flex-1">
-        <ComboboxDemo />
+        <FileSelector />
       </div>
       <div className="pr-2">
         <Preference />
